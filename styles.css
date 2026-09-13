@@ -1074,9 +1074,26 @@ a.history-item--link {
   border-color: var(--ink);
 }
 
-/* Hover affordance + hourly popup for forecast cards */
-.forecast-card--has-hours {
-  cursor: help;
+/* Hover affordance + hourly popup for forecast cards.
+   The tooltip anchors above the card and JS clamps it to stay inside
+   the viewport (--tip-x shifts the box; --arrow-x counter-shifts the
+   arrow so it keeps pointing at the card center). */
+.forecast-card--has-hours::after {
+  content: "▾";
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  pointer-events: none;
+  opacity: 0.7;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.forecast-card--has-hours:hover::after,
+.forecast-card--has-hours:focus-within::after {
+  opacity: 1;
+  transform: translateY(2px);
 }
 
 .fc-tooltip {
@@ -1084,7 +1101,9 @@ a.history-item--link {
   z-index: 40;
   left: 50%;
   bottom: calc(100% + 8px);
-  transform: translateX(-50%) translateY(4px);
+  --tip-x: 0px;
+  --arrow-x: 0px;
+  transform: translateX(calc(-50% + var(--tip-x))) translateY(4px);
   padding: 10px 14px;
   color: var(--plate-text);
   font-size: 0.78rem;
@@ -1098,7 +1117,12 @@ a.history-item--link {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+  /* Exit transitions: quick opacity fade, no spatial motion. */
+  transition:
+    opacity 90ms ease,
+    transform 0ms linear 90ms,
+    visibility 0ms linear 90ms;
+  will-change: opacity, transform;
 }
 
 .fc-tooltip::after {
@@ -1106,16 +1130,21 @@ a.history-item--link {
   position: absolute;
   top: 100%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% + var(--arrow-x)));
   border: 6px solid transparent;
   border-top-color: var(--plate);
 }
 
+/* Entry transitions: slower opacity + spatial rise into place. */
 .forecast-card:hover .fc-tooltip,
 .forecast-card:focus-within .fc-tooltip {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(calc(-50% + var(--tip-x))) translateY(0);
+  transition:
+    opacity 150ms ease,
+    transform 180ms cubic-bezier(0.32, 0.72, 0, 1),
+    visibility 0ms linear;
 }
 
 .fc-tooltip-title {
@@ -1135,19 +1164,23 @@ a.history-item--link {
 .fc-tooltip-row {
   display: flex;
   gap: 8px;
+  min-width: 0;
 }
 
 .fc-tooltip-hour {
   width: 34px;
+  min-width: 0;
 }
 
 .fc-tooltip-temp {
   width: 38px;
+  min-width: 0;
   text-align: right;
 }
 
 .fc-tooltip-precip {
   width: 36px;
+  min-width: 0;
   text-align: right;
   color: var(--plate-muted);
 }
@@ -1157,6 +1190,22 @@ a.history-item--link {
   outline: 1px solid var(--ink-soft);
   outline-offset: 3px;
   background: var(--cream);
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s,
+    outline-color 0.15s;
+}
+
+/* Today already shows the cream fill + ink border at rest; on hover, give
+   it a stronger outline + a soft ring so it still reads as "interactive"
+   (otherwise the regular :hover rule produces no visible change). */
+.forecast-card--today:hover {
+  outline-color: var(--ink);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 238, 0.4),
+    inset 0 -1px 0 rgba(74, 53, 32, 0.1),
+    0 0 0 3px var(--ink-wash-strong);
 }
 
 .forecast-date {
@@ -1502,6 +1551,13 @@ a.history-item--link {
     font-size: 0.68rem;
   }
 
+  /* On phones the tooltip is 24 hours tall — too big for a viewport.
+     Cap height, allow internal scroll. */
+  .fc-tooltip {
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
   /* Theme + unit switchers fit a tighter header on mobile */
   .header-controls {
     width: 100%;
@@ -1740,6 +1796,29 @@ a.history-item--link {
 [data-theme="dark"] .unit-toggle {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Tooltip in Dark: dark-on-dark doesn't read. Flip to a light plate
+   so the tooltip "pops" as a brighter floating layer — the skill's
+   "lighter materials draw attention to interactive elements" rule. */
+[data-theme="dark"] .fc-tooltip {
+  background: rgba(245, 245, 247, 0.96);
+  color: #1c1c1e;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .fc-tooltip::after {
+  border-top-color: rgba(245, 245, 247, 0.96);
+}
+
+[data-theme="dark"] .fc-tooltip-title {
+  border-bottom-color: rgba(60, 60, 67, 0.25);
+}
+
+[data-theme="dark"] .fc-tooltip-precip {
+  color: rgba(60, 60, 67, 0.7);
 }
 
 /* Forecast / history cards in Modern/Dark */
@@ -2167,6 +2246,24 @@ body,
   .search-btn:active,
   .retry-btn:active,
   .cal-nav-btn:active {
+    transform: none !important;
+  }
+
+  /* Tooltip: keep the opacity crossfade, drop the spatial rise.
+     Also flatten the hint chevron so it doesn't slide on hover. */
+  .fc-tooltip,
+  .forecast-card:hover .fc-tooltip,
+  .forecast-card:focus-within .fc-tooltip {
+    transition: opacity 150ms ease, visibility 0ms linear !important;
+    transform: translateX(calc(-50% + var(--tip-x))) !important;
+  }
+  .fc-tooltip::after {
+    transform: translateX(calc(-50% + var(--arrow-x))) !important;
+  }
+  .forecast-card--has-hours::after,
+  .forecast-card--has-hours:hover::after,
+  .forecast-card--has-hours:focus-within::after {
+    transition: opacity 0.15s !important;
     transform: none !important;
   }
 }

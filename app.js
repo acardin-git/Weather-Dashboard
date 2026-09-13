@@ -466,8 +466,9 @@ function groupHoursByDate(hourly) {
 }
 
 // Builds the hover popup for one forecast card: two side-by-side columns of
-// "hour / temp / precipitation %" rows covering all 24 hours.
-function buildHourlyTooltip(entries) {
+// "hour / temp / precipitation %" rows covering all 24 hours. `id` becomes the
+// tooltip's element id so the card can reference it via aria-describedby.
+function buildHourlyTooltip(entries, id) {
   if (!entries?.length) return "";
 
   const column = (list) =>
@@ -485,7 +486,7 @@ function buildHourlyTooltip(entries) {
   const mid = Math.ceil(entries.length / 2);
 
   return `
-    <div class="fc-tooltip" role="tooltip">
+    <div class="fc-tooltip" role="tooltip" id="fc-tooltip-${id}">
       <span class="fc-tooltip-title">By hour · temp / precip</span>
       <div class="fc-tooltip-cols">${column(entries.slice(0, mid))}${column(entries.slice(mid))}</div>
     </div>`;
@@ -505,10 +506,12 @@ function renderForecast(forecast) {
       const uvMax = daily.uv_index_max?.[i];
       const label =
         i === 0 ? "Today" : i === 1 ? "Tomorrow" : formatDate(dateStr);
-      const tooltip = buildHourlyTooltip(hoursByDate[dateStr]);
+      const tooltipId = `fc-tooltip-${i}`;
+      const tooltip = buildHourlyTooltip(hoursByDate[dateStr], i);
+      const describedBy = tooltip ? ` aria-describedby="${tooltipId}"` : "";
 
       return `
-        <article class="forecast-card ${i === 0 ? "forecast-card--today" : ""} ${tooltip ? "forecast-card--has-hours" : ""}"${tooltip ? ' tabindex="0"' : ""}>
+        <article class="forecast-card ${i === 0 ? "forecast-card--today" : ""} ${tooltip ? "forecast-card--has-hours" : ""}"${tooltip ? ' tabindex="0"' : ""}${describedBy}>
           <h3 class="forecast-date">${escapeHtml(label)}</h3>
           <div class="forecast-icon" title="${escapeHtml(code.label)}">${code.icon}</div>
           <p class="forecast-desc">${escapeHtml(code.label)}</p>
@@ -524,6 +527,10 @@ function renderForecast(forecast) {
         </article>`;
     })
     .join("");
+
+  // Position new tooltips immediately so the horizontal clamp is in place
+  // before the user can hover (avoids a horizontal slide-in on entry).
+  requestAnimationFrame(repositionAllTooltips);
 }
 
 /* Renders today's maximum UV plus an hourly strip. An hour is marked as a
@@ -714,6 +721,115 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") hideResults();
+});
+
+/* ----------------- Forecast-card tooltip interactions -----------------
+   The tooltip anchors above each card via CSS, but cards at the row
+   edges would otherwise let the tooltip overflow horizontally. JS clamps
+   the tooltip to the viewport by setting two CSS custom properties on
+   it: --tip-x shifts the box, --arrow-x counter-shifts the arrow so it
+   stays pointing at the card center. Tooltips are positioned up-front
+   (on render + on resize/scroll) so the entry motion is just a vertical
+   rise — no horizontal slide. */
+
+function positionTooltip(card) {
+  const tooltip = card.querySelector(".fc-tooltip");
+  if (!tooltip) return;
+  const cardRect = card.getBoundingClientRect();
+  const tipWidth = tooltip.offsetWidth;
+  if (tipWidth === 0) return; // not laid out yet
+  const margin = 8;
+  const centeredLeft = cardRect.left + cardRect.width / 2 - tipWidth / 2;
+  const clampedLeft = Math.max(
+    margin,
+    Math.min(window.innerWidth - tipWidth - margin, centeredLeft)
+  );
+  const shiftX = clampedLeft - centeredLeft;
+  tooltip.style.setProperty("--tip-x", `${shiftX}px`);
+  tooltip.style.setProperty("--arrow-x", `${-shiftX}px`);
+}
+
+function repositionAllTooltips() {
+  els.forecastGrid
+    .querySelectorAll(".forecast-card")
+    .forEach(positionTooltip);
+}
+
+let repositionTick = null;
+window.addEventListener("scroll", () => {
+  if (repositionTick) return;
+  repositionTick = requestAnimationFrame(() => {
+    repositionAllTooltips();
+    repositionTick = null;
+  });
+}, true);
+window.addEventListener("resize", repositionAllTooltips);
+
+// Arrow-key navigation between cards. Up/Down moves by visual row
+// (rows are detected from getBoundingClientRect().top proximity).
+els.forecastGrid.addEventListener("keydown", (e) => {
+  if (
+    ![
+      "ArrowRight",
+      "ArrowLeft",
+      "ArrowDown",
+      "ArrowUp",
+      "Home",
+      "End",
+    ].includes(e.key)
+  ) {
+    return;
+  }
+  const card = e.target.closest(".forecast-card");
+  if (!card) return;
+  const cards = Array.from(
+    els.forecastGrid.querySelectorAll(".forecast-card")
+  );
+  const idx = cards.indexOf(card);
+  if (idx < 0) return;
+
+  const rects = cards.map((c) => ({
+    c,
+    i: cards.indexOf(c),
+    rect: c.getBoundingClientRect(),
+  }));
+  const cardRect = card.getBoundingClientRect();
+  const ROW_TOLERANCE = 4;
+
+  const rowAt = (topY) =>
+    rects
+      .filter((o) => Math.abs(o.rect.top - topY) < ROW_TOLERANCE)
+      .sort((a, b) => a.rect.left - b.rect.left);
+
+  const currentRow = rowAt(cardRect.top);
+  const colIdx = Math.max(0, currentRow.findIndex((o) => o.i === idx));
+
+  let nextIdx = -1;
+  if (e.key === "ArrowRight") nextIdx = Math.min(idx + 1, cards.length - 1);
+  else if (e.key === "ArrowLeft") nextIdx = Math.max(idx - 1, 0);
+  else if (e.key === "ArrowDown") {
+    const nextRow = rowAt(cardRect.top + cardRect.height + 12);
+    if (nextRow[colIdx]) nextIdx = nextRow[colIdx].i;
+  } else if (e.key === "ArrowUp") {
+    const prevRow = rowAt(cardRect.top - cardRect.height - 12);
+    if (prevRow[colIdx]) nextIdx = prevRow[colIdx].i;
+  } else if (e.key === "Home") nextIdx = 0;
+  else if (e.key === "End") nextIdx = cards.length - 1;
+
+  if (nextIdx >= 0 && nextIdx !== idx) {
+    e.preventDefault();
+    cards[nextIdx].focus();
+  }
+});
+
+// Escape blurs a focused forecast card, dismissing its tooltip.
+document.addEventListener("keydown", (e) => {
+  if (
+    e.key === "Escape" &&
+    document.activeElement?.classList.contains("forecast-card")
+  ) {
+    document.activeElement.blur();
+  }
 });
 
 els.retryBtn.addEventListener("click", () => {
