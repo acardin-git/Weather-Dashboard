@@ -1,0 +1,1438 @@
+/* ==========================================================================
+   Weather Dashboard — styles.css
+   Theme: "vintage engineering blueprint" — aged patent-drawing paper,
+   sepia ink, hand-lettered annotations. Layout unchanged: Flexbox for
+   header/rows, CSS Grid for forecast + hourly strips.
+   ========================================================================== */
+
+/* ---------- Design tokens ---------- */
+:root {
+  /* Aged paper */
+  --paper-hi: #efe6d0;
+  --paper: #e8dcc0;
+  --paper-mid: #d9cbaa;
+  --paper-lo: #c9b896;
+  --cream: #f3ead6;
+
+  /* Sepia ink */
+  --ink: #4a3520;
+  --ink-soft: #6b4f2f;
+  --ink-faint: rgba(74, 53, 32, 0.55);
+  --ink-wash: rgba(74, 53, 32, 0.08);
+  --ink-wash-strong: rgba(74, 53, 32, 0.16);
+  --iron-gall: #6e3421;          /* faded rust ink for errors */
+  --iron-gall-soft: #8a4a2f;
+
+  /* Ink-stamped tooltip (dark plate) */
+  --plate: #3d2c1a;
+  --plate-text: #f0e6cf;
+  --plate-muted: #cdbfa4;
+
+  --font-tech: "Special Elite", "Courier Prime", "Courier New", monospace;
+  --font-hand: "Caveat", "Segoe Script", "Bradley Hand", cursive;
+
+  --radius: 3px;
+  --shadow: 0 2px 5px rgba(58, 40, 18, 0.22);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ---------- Base / drafting table ---------- */
+body {
+  margin: 0;
+  font-family: var(--font-tech);
+  color: var(--ink);
+  line-height: 1.5;
+  background-color: var(--paper-lo);
+  background-image:
+    linear-gradient(rgba(74, 53, 32, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74, 53, 32, 0.05) 1px, transparent 1px),
+    linear-gradient(160deg, #e8dcc0 0%, #d9cbaa 45%, #c9b896 100%);
+  background-size: 26px 26px, 26px 26px, cover;
+  background-attachment: fixed, fixed, fixed;
+}
+
+/* Paper grain overlay (SVG fractal noise), sits above everything */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.09;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Foxing stains + edge vignette, under the sheet */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 4% 6%, rgba(122, 80, 34, 0.16), transparent 22%),
+    radial-gradient(circle at 96% 4%, rgba(110, 72, 30, 0.13), transparent 20%),
+    radial-gradient(circle at 98% 92%, rgba(96, 62, 26, 0.17), transparent 26%),
+    radial-gradient(circle at 3% 94%, rgba(130, 88, 40, 0.12), transparent 22%),
+    radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(74, 53, 32, 0.14) 100%);
+}
+
+::selection {
+  background: rgba(74, 53, 32, 0.28);
+  color: var(--cream);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+::-webkit-scrollbar-track {
+  background: #d6c6a2;
+}
+::-webkit-scrollbar-thumb {
+  background: #a98f63;
+  border: 3px solid #d6c6a2;
+  border-radius: 6px;
+}
+
+/* ---------- The drawing sheet ---------- */
+.container {
+  position: relative;
+  z-index: 0; /* stacking context so the backing sheet pseudo stays behind */
+  max-width: 1100px;
+  margin: 28px auto 48px;
+  padding: 30px 26px 56px;
+  background:
+    linear-gradient(rgba(243, 234, 214, 0.92), rgba(235, 224, 198, 0.88));
+  border: 1px solid var(--ink-faint);
+  /* uneven, hand-trimmed deckle */
+  border-radius: 4px 16px 5px 18px / 17px 5px 15px 6px;
+  box-shadow:
+    var(--shadow),
+    inset 0 0 60px rgba(120, 86, 44, 0.07);
+}
+
+/* Backing sheet, slightly askew beneath the page */
+.container::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 10px -7px -9px 9px;
+  background: #cdbd99;
+  transform: rotate(0.45deg);
+  border-radius: 6px 4px 14px 4px;
+  box-shadow: 0 3px 8px rgba(58, 40, 18, 0.28);
+}
+
+/* Inner hairline frame with corner registration crosses + ruler ticks */
+.container::after {
+  content: "";
+  position: absolute;
+  inset: 11px;
+  pointer-events: none;
+  border: 1px solid var(--ink-faint);
+  border-radius: 2px;
+  background-image:
+    /* ruler ticks along top inside frame */
+    repeating-linear-gradient(
+      90deg,
+      rgba(74, 53, 32, 0.4) 0 1px,
+      transparent 1px 12px
+    ),
+    /* corner crosshairs (two strokes per corner) */
+    linear-gradient(rgba(74, 53, 32, 0.75), rgba(74, 53, 32, 0.75)),
+    linear-gradient(rgba(74, 53, 32, 0.75), rgba(74, 53, 32, 0.75)),
+    linear-gradient(rgba(74, 53, 32, 0.75), rgba(74, 53, 32, 0.75)),
+    linear-gradient(rgba(74, 53, 32, 0.75), rgba(74, 53, 32, 0.75)),
+    linear-gradient(rgba(74, 53, 32, 0.75), rgba(74, 53, 32, 0.75)),
+    linear-gradient(rgba(74, 53, 32, 0.75), rgba(74, 53, 32, 0.75)),
+    linear-gradient(rgba(74, 53, 32, 0.75), rgba(74, 53, 32, 0.75)),
+    linear-gradient(rgba(74, 53, 32, 0.75), rgba(74, 53, 32, 0.75));
+  background-repeat: repeat-x, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-size:
+    calc(100% - 28px) 5px,
+    13px 1px, 1px 13px,
+    13px 1px, 1px 13px,
+    13px 1px, 1px 13px,
+    13px 1px, 1px 13px;
+  background-position:
+    14px 6px,
+    left 0 top 0, left 0 top 0,
+    right 0 top 0, right 0 top 0,
+    left 0 bottom 0, left 0 bottom 0,
+    right 0 bottom 0, right 0 bottom 0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 1px dashed var(--ink);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Decorative primitives (added markup only; all pointer-transparent)
+   ========================================================================== */
+
+/* --- Dimension line: |<---- note ---->| --- */
+.dim {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 460px;
+  margin: 20px auto 4px;
+  color: var(--ink-faint);
+  transform: rotate(-0.8deg);
+  pointer-events: none;
+  user-select: none;
+}
+
+.dim-end {
+  width: 8px;
+  height: 15px;
+  border-left: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+}
+
+.dim-run {
+  position: relative;
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+}
+
+.dim-run::after {
+  content: "";
+  position: absolute;
+  top: -4.5px;
+  border: 5px solid transparent;
+}
+
+.dim-run.r::after {
+  right: -1px;
+  border-left-color: currentColor;
+}
+
+.dim-run.l::after {
+  left: -1px;
+  border-right-color: currentColor;
+}
+
+.dim-note {
+  padding: 0 4px;
+  font-family: var(--font-hand);
+  font-size: 1.08rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+/* --- Leader-line annotation captions --- */
+.note {
+  position: absolute;
+  z-index: 5;
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  transform: rotate(-2deg);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.9;
+}
+
+/* instance placements */
+.note--search {
+  top: -48px;
+  right: 4%;
+}
+
+.note--toggle {
+  top: -44px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+}
+
+.note::before,
+.note::after {
+  content: "";
+  position: absolute;
+}
+
+/* line extends to the right of the text, arrow points right */
+.note--r { padding-right: 62px; }
+.note--r::before {
+  top: 0.55em;
+  right: 0;
+  width: 52px;
+  height: 1px;
+  background: var(--ink-soft);
+}
+.note--r::after {
+  top: calc(0.55em - 4.5px);
+  right: -1px;
+  border: 5px solid transparent;
+  border-left-color: var(--ink-soft);
+}
+
+/* line extends to the left of the text, arrow points left */
+.note--l { padding-left: 62px; }
+.note--l::before {
+  top: 0.55em;
+  left: 0;
+  width: 52px;
+  height: 1px;
+  background: var(--ink-soft);
+}
+.note--l::after {
+  top: calc(0.55em - 4.5px);
+  left: -1px;
+  border: 5px solid transparent;
+  border-right-color: var(--ink-soft);
+}
+
+/* line drops below the text, arrow points down */
+.note--d { padding-bottom: 46px; }
+.note--d::before {
+  top: 1.25em;
+  left: 50%;
+  width: 1px;
+  height: 36px;
+  background: var(--ink-soft);
+}
+.note--d::after {
+  top: calc(1.25em + 36px);
+  left: calc(50% - 4.5px);
+  border: 5px solid transparent;
+  border-top-color: var(--ink-soft);
+}
+
+/* --- Cross-hatched section divider --- */
+.hatch {
+  height: 16px;
+  max-width: 520px;
+  margin: 26px auto;
+  border-top: 1px solid var(--ink-faint);
+  border-bottom: 1px solid var(--ink-faint);
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 4px,
+      rgba(74, 53, 32, 0.22) 4px 5px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0 4px,
+      rgba(74, 53, 32, 0.22) 4px 5px
+    );
+  pointer-events: none;
+}
+
+/* --- Archive stamp (fixed corner) --- */
+.stamp {
+  position: fixed;
+  right: 20px;
+  bottom: 18px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 14px 7px;
+  border: 1.5px solid var(--ink);
+  outline: 1px solid var(--ink-soft);
+  outline-offset: 3px;
+  transform: rotate(-5deg);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+  pointer-events: none;
+  user-select: none;
+  mix-blend-mode: multiply;
+  opacity: 0.85;
+}
+
+.stamp-no {
+  font-family: var(--font-tech);
+  font-size: 0.62rem;
+}
+
+.stamp-title {
+  font-family: var(--font-tech);
+  font-size: 0.82rem;
+  border-top: 1px solid var(--ink-faint);
+  border-bottom: 1px solid var(--ink-faint);
+  padding: 2px 0;
+}
+
+.stamp-sig {
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+/* Automatic figure numbering on section headings */
+body {
+  counter-reset: figs;
+}
+
+.card-title::before,
+.section-title::before {
+  counter-increment: figs;
+  content: "fig. " counter(figs, lower-roman) " \2014  ";
+  font-family: var(--font-hand);
+  font-size: 1.05em;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+}
+
+/* ---------- Header & search ---------- */
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--ink-faint);
+  padding-bottom: 14px;
+}
+
+.app-title {
+  margin: 0;
+  font-family: var(--font-tech);
+  font-size: 1.7rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  filter: sepia(0.65) saturate(0.75);
+}
+
+.app-title::after {
+  content: " \2014 rev. c";
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+.search-wrapper {
+  position: relative;
+  flex: 1 1 320px;
+  max-width: 480px;
+}
+
+.search-form {
+  display: flex;
+  gap: 8px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  font-family: var(--font-tech);
+  font-size: 1rem;
+  color: var(--ink);
+  background: rgba(243, 234, 214, 0.6);
+  border: 1px solid var(--ink-faint);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 2px rgba(74, 53, 32, 0.12);
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.search-input::placeholder {
+  color: rgba(74, 53, 32, 0.45);
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+}
+
+.search-input:focus {
+  border-color: var(--ink);
+  background: var(--cream);
+}
+
+.search-btn {
+  padding: 10px 18px;
+  font-family: var(--font-tech);
+  font-size: 0.92rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 238, 0.35),
+    inset 0 -2px 0 rgba(74, 53, 32, 0.28);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+}
+
+.search-btn:hover {
+  background: var(--ink);
+  color: var(--cream);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 238, 0.12),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.search-btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+/* Geocoding results dropdown */
+.search-results {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--cream);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow:
+    var(--shadow),
+    inset 0 0 0 1px rgba(243, 234, 214, 0.6),
+    inset 0 0 0 2px var(--ink-faint);
+}
+
+.search-results li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 2px;
+  border-bottom: 1px dashed rgba(74, 53, 32, 0.2);
+  cursor: pointer;
+}
+
+.search-results li:last-child {
+  border-bottom: none;
+}
+
+.search-results li:hover,
+.search-results li:focus {
+  background: var(--ink-wash-strong);
+  outline: none;
+}
+
+.search-results .no-results {
+  font-family: var(--font-hand);
+  font-size: 1.1rem;
+  color: var(--ink-faint);
+  cursor: default;
+}
+
+.search-results .no-results:hover {
+  background: none;
+}
+
+.result-name {
+  font-weight: 400;
+  letter-spacing: 0.03em;
+}
+
+.result-meta {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+}
+
+/* ---------- Unit toggle (°C / °F) ---------- */
+.unit-toggle {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(243, 234, 214, 0.6);
+  border: 1px solid var(--ink-faint);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.unit-btn {
+  padding: 7px 14px;
+  font-family: var(--font-tech);
+  font-size: 0.92rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.unit-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+
+.unit-btn.active {
+  color: var(--cream);
+  background: var(--ink);
+  border-color: var(--ink);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* ---------- Generic card: etched drafting plate ---------- */
+.card {
+  position: relative;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: rgba(243, 234, 214, 0.55);
+  border: 1px solid var(--ink-faint);
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 238, 0.4),
+    inset 0 -1px 0 rgba(74, 53, 32, 0.12);
+}
+
+/* Corner tick marks on plates */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--ink), var(--ink)),
+    linear-gradient(var(--ink), var(--ink)),
+    linear-gradient(var(--ink), var(--ink)),
+    linear-gradient(var(--ink), var(--ink)),
+    linear-gradient(var(--ink), var(--ink)),
+    linear-gradient(var(--ink), var(--ink)),
+    linear-gradient(var(--ink), var(--ink)),
+    linear-gradient(var(--ink), var(--ink));
+  background-repeat: no-repeat;
+  background-size:
+    9px 1px, 1px 9px,
+    9px 1px, 1px 9px,
+    9px 1px, 1px 9px,
+    9px 1px, 1px 9px;
+  background-position:
+    left 0 top 0, left 0 top 0,
+    right 0 top 0, right 0 top 0,
+    left 0 bottom 0, left 0 bottom 0,
+    right 0 bottom 0, right 0 bottom 0;
+  opacity: 0.65;
+}
+
+.card-title {
+  margin: 0 0 12px;
+  font-family: var(--font-tech);
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid rgba(74, 53, 32, 0.25);
+  padding-bottom: 6px;
+}
+
+/* ---------- Location card ---------- */
+.location-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.location-card h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+}
+
+#location-meta {
+  margin: 4px 0 0;
+  font-family: var(--font-hand);
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+}
+
+.location-date {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  transform: rotate(-1deg);
+}
+
+/* ---------- Error banner: rust ink warning plate ---------- */
+.error-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  color: var(--iron-gall);
+  background-color: rgba(138, 74, 47, 0.1);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 9px,
+    rgba(138, 74, 47, 0.09) 9px 10px
+  );
+  border: 1px solid var(--iron-gall-soft);
+  border-left: 4px double var(--iron-gall);
+  border-radius: var(--radius);
+}
+
+.retry-btn {
+  padding: 8px 16px;
+  font-family: var(--font-tech);
+  font-size: 0.88rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--iron-gall);
+  background: transparent;
+  border: 1px solid var(--iron-gall);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+.retry-btn:hover {
+  background: var(--iron-gall);
+  color: var(--cream);
+}
+
+/* ---------- UV section ---------- */
+.uv-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.uv-value {
+  font-size: 2.2rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.uv-sub {
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
+
+.uv-badge {
+  padding: 2px 12px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.uv-badge.uv-low,
+.uv-hour.uv-low {
+  background: rgba(107, 79, 47, 0.1);
+}
+
+.uv-badge.uv-moderate,
+.uv-hour.uv-moderate {
+  background: rgba(107, 79, 47, 0.2);
+}
+
+.uv-badge.uv-high,
+.uv-hour.uv-high {
+  background: rgba(90, 62, 34, 0.3);
+}
+
+.uv-badge.uv-veryhigh,
+.uv-hour.uv-veryhigh {
+  background: rgba(74, 53, 32, 0.42);
+}
+
+.uv-badge.uv-extreme,
+.uv-hour.uv-extreme {
+  background: rgba(52, 36, 20, 0.6);
+}
+
+.uv-badge.uv-low { color: #6b4f2f; }
+.uv-badge.uv-moderate { color: #5a3e22; }
+.uv-badge.uv-high { color: #4a3520; }
+.uv-badge.uv-veryhigh { color: #f3ead6; }
+.uv-badge.uv-extreme { color: #f3ead6; }
+
+.uv-hint {
+  margin: 0 0 10px;
+  font-family: var(--font-hand);
+  font-size: 1.02rem;
+  color: var(--ink-faint);
+  transform: rotate(-0.6deg);
+}
+
+.uv-hours {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 6px;
+}
+
+.uv-hour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 2px;
+  border: 1px solid rgba(74, 53, 32, 0.25);
+  border-radius: 2px;
+  font-size: 0.78rem;
+}
+
+.uv-hour-val {
+  letter-spacing: 0.02em;
+}
+
+.uv-hour-time {
+  color: var(--ink-faint);
+}
+
+/* Highlight for the "worst times for UV exposure" hours */
+.uv-hour.peak {
+  border: 1px dashed var(--ink);
+  outline: 1px solid rgba(74, 53, 32, 0.35);
+  outline-offset: 1px;
+  background: rgba(74, 53, 32, 0.14);
+}
+
+.uv-hour.peak .uv-hour-time {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.uv-fallback {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  color: var(--ink-faint);
+}
+
+/* ---------- Historical averages card ---------- */
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.history-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  background: rgba(232, 220, 192, 0.5);
+  border: 1px solid rgba(74, 53, 32, 0.35);
+  border-radius: var(--radius);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+/* Hover affordance + popup for per-year high/low on this date */
+.history-item--has-info {
+  cursor: help;
+}
+
+.history-item--has-info .history-label {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.history-tooltip {
+  position: absolute;
+  z-index: 40;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+  min-width: 200px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--plate-text);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  background: var(--plate);
+  border-radius: 2px;
+  box-shadow:
+    var(--shadow),
+    inset 0 0 0 1px rgba(240, 230, 207, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+}
+
+.history-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--plate);
+}
+
+.history-item:hover .history-tooltip,
+.history-item:focus-within .history-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.history-tooltip-title {
+  margin-bottom: 2px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(240, 230, 207, 0.3);
+  padding-bottom: 3px;
+}
+
+.history-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+/* "Avg. high this month" card links to the calendar page */
+a.history-item--link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.history-item--link::after {
+  content: "\203A";
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 1.2rem;
+  color: var(--ink-faint);
+  transition: color 0.15s, transform 0.15s;
+}
+
+.history-item--link:hover {
+  border-color: var(--ink);
+  background: var(--ink-wash-strong);
+}
+
+.history-item--link:hover::after {
+  color: var(--ink);
+  transform: translateX(2px);
+}
+
+.history-label {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.history-value {
+  font-size: 1.8rem;
+  letter-spacing: 0.02em;
+}
+
+.history-sub {
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  color: var(--ink-faint);
+}
+
+.history-compare {
+  margin: 14px 0 0;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+.history-unavailable {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  color: var(--ink-faint);
+}
+
+/* ---------- 10-day forecast grid ---------- */
+.section-title {
+  margin: 0 0 14px;
+  font-family: var(--font-tech);
+  font-size: 1.25rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.forecast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  gap: 12px;
+}
+
+.forecast-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 10px;
+  text-align: center;
+  background: rgba(243, 234, 214, 0.55);
+  border: 1px solid rgba(74, 53, 32, 0.35);
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 238, 0.4),
+    inset 0 -1px 0 rgba(74, 53, 32, 0.1);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.forecast-card:hover {
+  background: var(--cream);
+  border-color: var(--ink);
+}
+
+/* Hover affordance + hourly popup for forecast cards */
+.forecast-card--has-hours {
+  cursor: help;
+}
+
+.fc-tooltip {
+  position: absolute;
+  z-index: 40;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+  padding: 10px 14px;
+  color: var(--plate-text);
+  font-size: 0.78rem;
+  text-align: left;
+  white-space: nowrap;
+  background: var(--plate);
+  border-radius: 2px;
+  box-shadow:
+    var(--shadow),
+    inset 0 0 0 1px rgba(240, 230, 207, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+}
+
+.fc-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--plate);
+}
+
+.forecast-card:hover .fc-tooltip,
+.forecast-card:focus-within .fc-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.fc-tooltip-title {
+  display: block;
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(240, 230, 207, 0.3);
+  padding-bottom: 3px;
+}
+
+.fc-tooltip-cols {
+  display: flex;
+  gap: 18px;
+}
+
+.fc-tooltip-row {
+  display: flex;
+  gap: 8px;
+}
+
+.fc-tooltip-hour {
+  width: 34px;
+}
+
+.fc-tooltip-temp {
+  width: 38px;
+  text-align: right;
+}
+
+.fc-tooltip-precip {
+  width: 36px;
+  text-align: right;
+  color: var(--plate-muted);
+}
+
+.forecast-card--today {
+  border: 1px solid var(--ink);
+  outline: 1px solid var(--ink-soft);
+  outline-offset: 3px;
+  background: var(--cream);
+}
+
+.forecast-date {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 1.15rem;
+  font-weight: 600;
+  transform: rotate(-1.2deg);
+}
+
+.forecast-icon {
+  font-size: 2.1rem;
+  line-height: 1.2;
+  filter: sepia(0.75) saturate(0.55) contrast(0.92);
+}
+
+.forecast-desc {
+  margin: 0;
+  min-height: 2.4em;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.forecast-temps {
+  margin: 2px 0;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.temp-max {
+  font-weight: 700;
+}
+
+.temp-min {
+  color: var(--ink-faint);
+}
+
+.forecast-meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+/* ---------- Skeleton loaders (aged-paper shimmer) ---------- */
+.skeleton,
+.skeleton-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-mid);
+  border-radius: 2px;
+}
+
+.skeleton-text {
+  display: block;
+  height: 1.05rem;
+}
+
+.skeleton-card {
+  min-height: 240px;
+  border: 1px solid rgba(74, 53, 32, 0.25);
+}
+
+.skeleton::after,
+.skeleton-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(250, 244, 228, 0.65),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* ---------- Footer ---------- */
+.app-footer {
+  margin-top: 28px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ink-faint);
+  text-align: center;
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
+
+.app-footer a {
+  color: var(--ink);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.app-footer a:hover {
+  text-decoration-style: solid;
+}
+
+/* ---------- Monthly averages calendar page ---------- */
+.cal-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--ink-faint);
+  padding-bottom: 12px;
+}
+
+.back-link {
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transform: rotate(-1deg);
+  display: inline-block;
+}
+
+.back-link:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cal-title {
+  margin: 0;
+  min-width: 150px;
+  text-align: center;
+  font-family: var(--font-tech);
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cal-nav-btn {
+  padding: 6px 14px;
+  font-family: var(--font-tech);
+  font-size: 1.15rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 238, 0.35),
+    inset 0 -2px 0 rgba(74, 53, 32, 0.28);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cal-nav-btn:hover {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.cal-meta {
+  margin: 0 0 16px;
+  font-family: var(--font-hand);
+  font-size: 1.08rem;
+  color: var(--ink-soft);
+  transform: rotate(-0.5deg);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.calendar-dow {
+  padding: 4px 0;
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  text-align: center;
+  border-bottom: 1px solid rgba(74, 53, 32, 0.3);
+}
+
+.calendar-dow:nth-child(odd) {
+  transform: rotate(-1.4deg);
+}
+
+.calendar-dow:nth-child(even) {
+  transform: rotate(1.2deg);
+}
+
+.cal-day {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 92px;
+  padding: 8px;
+  background: rgba(243, 234, 214, 0.5);
+  border: 1px solid rgba(74, 53, 32, 0.3);
+  border-radius: 2px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.cal-day:hover {
+  background: var(--cream);
+  border-color: var(--ink-soft);
+}
+
+.cal-day--empty {
+  background: transparent;
+  border-color: transparent;
+}
+
+.cal-day--today {
+  border: 1px solid var(--ink);
+  outline: 1px solid rgba(74, 53, 32, 0.4);
+  outline-offset: 2px;
+  background: var(--cream);
+}
+
+/* Skeleton loading cells (override the default cell background) */
+.cal-day--loading {
+  background: var(--paper-mid);
+}
+
+.cal-day-num {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.cal-day-temps {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+}
+
+.cal-day-high {
+  font-weight: 700;
+}
+
+.cal-day-low {
+  color: var(--ink-faint);
+}
+
+.cal-error {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 1.1rem;
+  color: var(--iron-gall);
+}
+
+/* ---------- Responsive tweaks ---------- */
+@media (max-width: 600px) {
+  .container {
+    margin: 14px 10px 28px;
+    padding: 24px 14px 44px;
+  }
+
+  .app-title {
+    font-size: 1.35rem;
+  }
+
+  /* decorative motifs yield to small screens */
+  .dim,
+  .note {
+    display: none;
+  }
+
+  .stamp {
+    transform: rotate(-5deg) scale(0.85);
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .search-form {
+    flex-direction: column;
+  }
+
+  .search-btn {
+    width: 100%;
+  }
+
+  .location-card h2 {
+    font-size: 1.2rem;
+  }
+
+  .uv-value {
+    font-size: 1.8rem;
+  }
+
+  .uv-hours {
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  }
+
+  .forecast-grid {
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  }
+
+  .skeleton-card {
+    min-height: 250px;
+  }
+
+  .cal-title {
+    min-width: 120px;
+    font-size: 1.2rem;
+  }
+
+  .calendar-grid {
+    gap: 5px;
+  }
+
+  .cal-day {
+    min-height: 68px;
+    padding: 6px;
+  }
+
+  .cal-day-num {
+    font-size: 0.78rem;
+  }
+
+  .cal-day-temps {
+    font-size: 0.72rem;
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

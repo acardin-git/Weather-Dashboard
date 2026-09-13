@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Special+Elite&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+
+    <!-- ======= Header: title + city search ======= -->
+    <header class="app-header">
+      <h1 class="app-title">🌤️ Weather Dashboard</h1>
+
+      <div class="search-wrapper">
+        <form id="search-form" class="search-form" autocomplete="off">
+          <input
+            type="search"
+            id="search-input"
+            class="search-input"
+            placeholder="Search for a city…"
+            aria-label="Search for a city"
+          />
+          <button type="submit" id="search-btn" class="search-btn">Search</button>
+        </form>
+        <!-- Geocoding results dropdown (filled by app.js) -->
+        <ul id="search-results" class="search-results hidden" role="listbox" aria-label="City search results"></ul>
+        <span class="note note--d note--search" aria-hidden="true">log the station coordinates</span>
+      </div>
+
+      <div class="unit-toggle" role="group" aria-label="Temperature unit">
+        <button type="button" id="unit-c" class="unit-btn" aria-pressed="false">°C</button>
+        <button type="button" id="unit-f" class="unit-btn" aria-pressed="false">°F</button>
+      </div>
+    </header>
+
+    <!-- Decorative: dimension line under the instrument header -->
+    <div class="dim" aria-hidden="true">
+      <i class="dim-end"></i><i class="dim-run l"></i>
+      <span class="dim-note">survey instruments &mdash; scale 1:1</span>
+      <i class="dim-run r"></i><i class="dim-end"></i>
+    </div>
+
+    <!-- ======= Friendly API/network error message (hidden by default) ======= -->
+    <div id="error-banner" class="error-banner hidden" role="alert">
+      <span id="error-text"></span>
+      <button id="retry-btn" class="retry-btn" type="button">Retry</button>
+    </div>
+
+    <!-- ======= Selected location ======= -->
+    <section class="card location-card" aria-label="Selected location">
+      <div>
+        <h2 id="location-name" class="skeleton skeleton-text">&nbsp;</h2>
+        <p id="location-meta">&nbsp;</p>
+      </div>
+      <p id="location-date" class="location-date"></p>
+    </section>
+
+    <div class="hatch" aria-hidden="true"></div>
+
+    <!-- ======= 10-day forecast ======= -->
+    <section aria-label="10-day forecast">
+      <h2 class="section-title">10-Day Forecast (<span id="forecast-unit">°C</span>)</h2>
+      <!-- Decorative: dimension line over the projection plates -->
+      <div class="dim" aria-hidden="true">
+        <i class="dim-end"></i><i class="dim-run l"></i>
+        <span class="dim-note">daily projections &mdash; ten plates</span>
+        <i class="dim-run r"></i><i class="dim-end"></i>
+      </div>
+      <div id="forecast-grid" class="forecast-grid">
+        <!-- Skeleton cards shown while data is loading (replaced by app.js) -->
+        <div class="forecast-card skeleton-card"></div>
+        <div class="forecast-card skeleton-card"></div>
+        <div class="forecast-card skeleton-card"></div>
+        <div class="forecast-card skeleton-card"></div>
+        <div class="forecast-card skeleton-card"></div>
+        <div class="forecast-card skeleton-card"></div>
+        <div class="forecast-card skeleton-card"></div>
+        <div class="forecast-card skeleton-card"></div>
+        <div class="forecast-card skeleton-card"></div>
+        <div class="forecast-card skeleton-card"></div>
+      </div>
+    </section>
+
+    <div class="hatch" aria-hidden="true"></div>
+
+    <!-- ======= Historical averages (last 5 years) ======= -->
+    <section class="card" aria-label="Historical averages">
+      <h2 class="card-title">Historical Averages · Last 5 Years</h2>
+      <div id="historical-content" class="history-grid">
+        <div class="history-item">
+          <span class="history-label">Avg. temp on this date</span>
+          <span class="skeleton skeleton-text" style="width: 90px"></span>
+        </div>
+        <div class="history-item">
+          <span class="history-label">Avg. temp this month</span>
+          <span class="skeleton skeleton-text" style="width: 90px"></span>
+        </div>
+      </div>
+      <p id="history-compare" class="history-compare"></p>
+    </section>
+
+    <div class="hatch" aria-hidden="true"></div>
+
+    <!-- ======= Today's UV index + worst exposure hours ======= -->
+    <section class="card" aria-label="Today's UV index">
+      <h2 class="card-title">Today's UV Index</h2>
+      <div id="uv-summary" class="uv-summary">
+        <span class="skeleton skeleton-text" style="width: 180px"></span>
+      </div>
+      <p class="uv-hint">Orange-outlined hours mark the worst times for UV exposure (highest UV index).</p>
+      <div id="uv-hours" class="uv-hours"></div>
+    </section>
+
+    <footer class="app-footer">
+      Weather data by
+      <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
+    </footer>
+  </main>
+
+  <!-- Decorative: archive stamp -->
+  <div class="stamp" aria-hidden="true">
+    <span class="stamp-no">Sheet &#8470; WD-26/08</span>
+    <span class="stamp-title">Blueprint Archive</span>
+    <span class="stamp-sig">survey checked &mdash; o.m.</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

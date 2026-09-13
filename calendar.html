@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Monthly Averages · Weather Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Special+Elite&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+
+    <!-- ======= Header: back link + month navigation + unit toggle ======= -->
+    <header class="cal-header">
+      <a class="back-link" href="index.html">&#8592; Dashboard</a>
+
+      <div class="cal-nav">
+        <button type="button" id="prev-month" class="cal-nav-btn" aria-label="Previous month">&lsaquo;</button>
+        <h1 id="month-title" class="cal-title">&nbsp;</h1>
+        <button type="button" id="next-month" class="cal-nav-btn" aria-label="Next month">&rsaquo;</button>
+      </div>
+
+      <div class="unit-toggle" role="group" aria-label="Temperature unit">
+        <button type="button" id="unit-c" class="unit-btn" aria-pressed="false">°C</button>
+        <button type="button" id="unit-f" class="unit-btn" aria-pressed="false">°F</button>
+        <span class="note note--d note--toggle" aria-hidden="true">mercury scale</span>
+      </div>
+    </header>
+
+    <!-- Decorative: dimension line under the plate header -->
+    <div class="dim" aria-hidden="true">
+      <i class="dim-end"></i><i class="dim-run l"></i>
+      <span class="dim-note">five-year record &mdash; monthly survey</span>
+      <i class="dim-run r"></i><i class="dim-end"></i>
+    </div>
+
+    <p id="cal-meta" class="cal-meta">&nbsp;</p>
+
+    <!-- ======= Calendar of 5-year average highs/lows per day ======= -->
+    <section class="card" aria-label="Daily historical averages">
+      <div id="calendar-grid" class="calendar-grid"></div>
+      <p id="cal-error" class="cal-error hidden"></p>
+    </section>
+
+    <div class="hatch" aria-hidden="true"></div>
+
+    <footer class="app-footer">
+      Historical data by
+      <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
+    </footer>
+  </main>
+
+  <!-- Decorative: archive stamp -->
+  <div class="stamp" aria-hidden="true">
+    <span class="stamp-no">Sheet &#8470; WD-26/08-B</span>
+    <span class="stamp-title">Blueprint Archive</span>
+    <span class="stamp-sig">records verified &mdash; o.m.</span>
+  </div>
+
+  <script src="calendar.js"></script>
+</body>
+</html>
