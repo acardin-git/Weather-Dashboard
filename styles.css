@@ -33,6 +33,7 @@
 
   --radius: 3px;
   --shadow: 0 2px 5px rgba(58, 40, 18, 0.22);
+  --accent: var(--ink);
 }
 
 * {
@@ -568,6 +569,7 @@ body {
 
 .unit-btn {
   padding: 7px 14px;
+  text-align: center;
   font-family: var(--font-tech);
   font-size: 0.92rem;
   letter-spacing: 0.06em;
@@ -576,7 +578,9 @@ body {
   border: 1px dashed transparent;
   border-radius: 2px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s,
+    transform 100ms ease-out;
 }
 
 .unit-btn:hover {
@@ -584,11 +588,74 @@ body {
   border-color: var(--ink-faint);
 }
 
+/* Press feedback on touch-down (§1 Response). */
+.unit-btn:active {
+  transform: scale(0.96);
+}
+
 .unit-btn.active {
   color: var(--cream);
   background: var(--ink);
   border-color: var(--ink);
   box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Sliding active-state pill (Modern/Dark).
+   Hidden in Blueprint — its solid ink-block active state is the design. */
+.unit-pill {
+  display: none;
+}
+
+[data-theme="modern"] .unit-toggle,
+[data-theme="dark"] .unit-toggle {
+  gap: 0; /* flush so the pill aligns with one button width */
+}
+
+[data-theme="modern"] .unit-btn,
+[data-theme="dark"] .unit-btn {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  /* Higher-contrast inactive color on translucent surface (§12 vibrancy). */
+  color: var(--ink-soft);
+}
+
+[data-theme="modern"] .unit-btn:hover,
+[data-theme="dark"] .unit-btn:hover {
+  border-color: transparent;
+}
+
+[data-theme="modern"] .unit-btn.active,
+[data-theme="dark"] .unit-btn.active {
+  color: white;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+[data-theme="modern"] .unit-pill,
+[data-theme="dark"] .unit-pill {
+  display: block;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 2);
+  height: calc(100% - 8px);
+  background: var(--accent);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  transition: background-color 240ms ease;
+  will-change: transform;
+}
+
+[data-theme="dark"] .unit-pill {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
 }
 
 /* ---------- Generic card: etched drafting plate ---------- */
@@ -1424,15 +1491,663 @@ a.history-item--link {
   .cal-day-temps {
     font-size: 0.72rem;
   }
+
+  /* Theme + unit switchers fit a tighter header on mobile */
+  .header-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .theme-btn {
+    min-width: 0;
+    padding: 6px 6px;
+    font-size: 0.7rem;
+  }
 }
 
-/* ---------- Reduced motion ---------- */
+/* ==========================================================================
+   Theme system
+   - :root carries the Blueprint defaults (no-flash fallback).
+   - [data-theme="blueprint"] re-asserts the same tokens explicitly.
+   - [data-theme="modern"] / [data-theme="dark"] override variables and
+     surface treatments; decorations specific to Blueprint are hidden.
+   ========================================================================== */
+
+[data-theme="blueprint"] {
+  --accent: var(--ink);
+}
+
+[data-theme="modern"] {
+  --paper-hi: #ffffff;
+  --paper: #f8f9fb;
+  --paper-mid: #e9eaef;
+  --paper-lo: #d1d1d6;
+  --cream: #ffffff;
+
+  --ink: #1c1c1e;
+  --ink-soft: #3a3a3c;
+  --ink-faint: rgba(60, 60, 67, 0.6);
+  --ink-wash: rgba(60, 60, 67, 0.06);
+  --ink-wash-strong: rgba(60, 60, 67, 0.12);
+  --iron-gall: #d70015;
+  --iron-gall-soft: #ff3b30;
+
+  --plate: rgba(28, 28, 30, 0.92);
+  --plate-text: #f2f2f7;
+  --plate-muted: rgba(235, 235, 245, 0.7);
+
+  --accent: #007aff;
+
+  --font-tech: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-hand: var(--font-tech);
+
+  --radius: 12px;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] {
+  --paper-hi: #3a3a3c;
+  --paper: #2c2c2e;
+  --paper-mid: #1c1c1e;
+  --paper-lo: #000000;
+  --cream: #1c1c1e;
+
+  --ink: #f2f2f7;
+  --ink-soft: rgba(235, 235, 245, 0.78);
+  --ink-faint: rgba(235, 235, 245, 0.5);
+  --ink-wash: rgba(255, 255, 255, 0.06);
+  --ink-wash-strong: rgba(255, 255, 255, 0.14);
+  --iron-gall: #ff453a;
+  --iron-gall-soft: #ff6961;
+
+  --plate: rgba(99, 99, 102, 0.95);
+  --plate-text: #f2f2f7;
+  --plate-muted: rgba(235, 235, 245, 0.7);
+
+  --accent: #0a84ff;
+
+  --font-tech: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-hand: var(--font-tech);
+
+  --radius: 12px;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Theme-specific body backgrounds (override blueprint's grid + gradient) */
+[data-theme="modern"] body {
+  background: linear-gradient(180deg, #f2f2f7 0%, #e9eaef 100%);
+}
+
+[data-theme="dark"] body {
+  background: linear-gradient(180deg, #1c1c1e 0%, #000000 100%);
+}
+
+/* Container loses the paper sheet in Modern/Dark — body provides the surface */
+[data-theme="modern"] .container,
+[data-theme="dark"] .container {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Card surfaces: translucent + backdrop-filter for Modern/Dark */
+[data-theme="modern"] .card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-top-color: rgba(255, 255, 255, 0.4); /* light catching the material */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius);
+}
+
+[data-theme="dark"] .card {
+  background: rgba(28, 28, 30, 0.62);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-radius: var(--radius);
+}
+
+/* Hide blueprint-only decorations in Modern/Dark */
+[data-theme="modern"] .dim,
+[data-theme="modern"] .note,
+[data-theme="modern"] .hatch,
+[data-theme="modern"] .stamp,
+[data-theme="dark"] .dim,
+[data-theme="dark"] .note,
+[data-theme="dark"] .hatch,
+[data-theme="dark"] .stamp {
+  display: none;
+}
+
+[data-theme="modern"] body::before,
+[data-theme="modern"] body::after,
+[data-theme="modern"] .container::before,
+[data-theme="modern"] .container::after,
+[data-theme="modern"] .card::before,
+[data-theme="modern"] .app-title::after,
+[data-theme="modern"] .card-title::before,
+[data-theme="modern"] .section-title::before,
+[data-theme="dark"] body::before,
+[data-theme="dark"] body::after,
+[data-theme="dark"] .container::before,
+[data-theme="dark"] .container::after,
+[data-theme="dark"] .card::before,
+[data-theme="dark"] .app-title::after,
+[data-theme="dark"] .card-title::before,
+[data-theme="dark"] .section-title::before {
+  display: none;
+}
+
+/* Drop sepia filters from title + weather icons in Modern/Dark */
+[data-theme="modern"] .app-title,
+[data-theme="modern"] .forecast-icon,
+[data-theme="dark"] .app-title,
+[data-theme="dark"] .forecast-icon {
+  filter: none;
+}
+
+/* Unit-toggle active state — pill provides the visual in Modern/Dark
+   (see the unit-toggle block above). This rule kept for reference; the
+   active button is transparent and the pill carries the accent fill. */
+
+/* Search button — accent fill in Modern/Dark */
+[data-theme="modern"] .search-btn,
+[data-theme="dark"] .search-btn {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: none;
+}
+
+[data-theme="modern"] .search-btn:hover,
+[data-theme="dark"] .search-btn:hover {
+  background: var(--accent);
+  color: white;
+  filter: brightness(0.92);
+}
+
+[data-theme="modern"] .search-btn:disabled,
+[data-theme="dark"] .search-btn:disabled {
+  opacity: 0.55;
+  filter: none;
+}
+
+/* Retry / nav buttons — accent in Modern/Dark */
+[data-theme="modern"] .retry-btn,
+[data-theme="modern"] .cal-nav-btn,
+[data-theme="dark"] .retry-btn,
+[data-theme="dark"] .cal-nav-btn {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: none;
+}
+
+[data-theme="modern"] .retry-btn:hover,
+[data-theme="modern"] .cal-nav-btn:hover,
+[data-theme="dark"] .retry-btn:hover,
+[data-theme="dark"] .cal-nav-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+/* Search input — neutral translucent in Modern/Dark */
+[data-theme="modern"] .search-input {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .search-input {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+/* Unit-toggle plate — translucent in Modern/Dark */
+[data-theme="modern"] .unit-toggle,
+[data-theme="dark"] .unit-toggle {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+[data-theme="dark"] .unit-toggle {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Forecast / history cards in Modern/Dark */
+[data-theme="modern"] .forecast-card,
+[data-theme="dark"] .forecast-card {
+  background: var(--cream);
+  border: 1px solid var(--ink-wash-strong);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="modern"] .forecast-card:hover,
+[data-theme="dark"] .forecast-card:hover {
+  background: var(--cream);
+  border-color: var(--accent);
+}
+
+[data-theme="modern"] .forecast-card--today,
+[data-theme="dark"] .forecast-card--today {
+  border-color: var(--accent);
+  background: var(--cream);
+  outline-color: var(--accent);
+  outline-offset: 3px;
+}
+
+[data-theme="modern"] .history-item,
+[data-theme="dark"] .history-item {
+  background: var(--cream);
+  border: 1px solid var(--ink-wash-strong);
+}
+
+[data-theme="modern"] .history-item:hover,
+[data-theme="dark"] .history-item:hover {
+  border-color: var(--accent);
+}
+
+[data-theme="modern"] .history-item--link:hover,
+[data-theme="dark"] .history-item--link:hover {
+  background: var(--ink-wash);
+  border-color: var(--accent);
+}
+
+/* Calendar cells — neutral in Modern/Dark */
+[data-theme="modern"] .cal-day,
+[data-theme="dark"] .cal-day {
+  background: var(--cream);
+  border: 1px solid var(--ink-wash-strong);
+}
+
+[data-theme="modern"] .cal-day:hover,
+[data-theme="dark"] .cal-day:hover {
+  border-color: var(--accent);
+}
+
+[data-theme="modern"] .cal-day--today,
+[data-theme="dark"] .cal-day--today {
+  border-color: var(--accent);
+  outline-color: var(--accent);
+  background: var(--cream);
+}
+
+/* UV severity — flatten to neutral + accent for very high/extreme */
+[data-theme="modern"] .uv-hour,
+[data-theme="modern"] .uv-badge,
+[data-theme="dark"] .uv-hour,
+[data-theme="dark"] .uv-badge {
+  background: var(--ink-wash);
+  color: var(--ink);
+  border-color: var(--ink-wash-strong);
+}
+
+[data-theme="modern"] .uv-hour.uv-veryhigh,
+[data-theme="modern"] .uv-hour.uv-extreme,
+[data-theme="modern"] .uv-badge.uv-veryhigh,
+[data-theme="modern"] .uv-badge.uv-extreme,
+[data-theme="dark"] .uv-hour.uv-veryhigh,
+[data-theme="dark"] .uv-hour.uv-extreme,
+[data-theme="dark"] .uv-badge.uv-veryhigh,
+[data-theme="dark"] .uv-badge.uv-extreme {
+  background: rgba(255, 59, 48, 0.16);
+  color: var(--iron-gall);
+}
+
+[data-theme="dark"] .uv-hour.uv-veryhigh,
+[data-theme="dark"] .uv-hour.uv-extreme,
+[data-theme="dark"] .uv-badge.uv-veryhigh,
+[data-theme="dark"] .uv-badge.uv-extreme {
+  color: var(--iron-gall);
+}
+
+[data-theme="modern"] .uv-hour.peak,
+[data-theme="dark"] .uv-hour.peak {
+  border: 1px dashed var(--ink);
+  background: var(--ink-wash-strong);
+  outline-color: var(--ink-faint);
+}
+
+/* Search results — translucent in Modern/Dark */
+[data-theme="modern"] .search-results {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="modern"] .search-results li:hover,
+[data-theme="modern"] .search-results li:focus {
+  background: rgba(0, 122, 255, 0.08);
+}
+
+[data-theme="dark"] .search-results {
+  background: rgba(28, 28, 30, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  color: var(--ink);
+}
+
+[data-theme="dark"] .search-results li:hover,
+[data-theme="dark"] .search-results li:focus {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Error banner — accent-tinted in Modern/Dark */
+[data-theme="modern"] .error-banner,
+[data-theme="dark"] .error-banner {
+  background: rgba(255, 59, 48, 0.1);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 9px,
+    rgba(255, 59, 48, 0.06) 9px 10px
+  );
+  border-color: var(--iron-gall-soft);
+  color: var(--iron-gall);
+}
+
+/* ==========================================================================
+   Theme switcher (segmented control)
+   ========================================================================== */
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.theme-switcher {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 0;
+  padding: 3px;
+  background: var(--ink-wash-strong);
+  border-radius: 10px;
+  user-select: none;
+  border: 1px solid var(--ink-wash-strong);
+}
+
+[data-theme="dark"] .theme-switcher {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.theme-pill {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / 3);
+  height: calc(100% - 6px);
+  background: var(--cream);
+  border-radius: 8px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  transition: background-color 240ms ease; /* transform driven by JS spring */
+  pointer-events: none;
+  will-change: transform;
+}
+
+[data-theme="dark"] .theme-pill {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+}
+
+.theme-btn {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 64px;
+  padding: 6px 10px;
+  font-family: var(--font-tech);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 200ms ease;
+}
+
+.theme-btn:hover {
+  color: var(--ink);
+}
+
+.theme-btn.active {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.theme-btn:active {
+  transform: scale(0.96);
+}
+
+.theme-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  z-index: 2;
+}
+
+/* Smooth color/border transitions for the theme switch.
+   Animates compositor-friendly properties only. */
+body,
+.container,
+.card,
+.forecast-card,
+.history-item,
+.cal-day,
+.uv-hour,
+.uv-badge,
+.unit-toggle,
+.search-input,
+.search-results,
+.search-btn,
+.unit-btn,
+.retry-btn,
+.cal-nav-btn,
+.error-banner,
+.theme-switcher,
+.theme-pill,
+.theme-btn,
+.back-link,
+.search-results li,
+.location-card {
+  transition:
+    background-color 240ms ease,
+    color 240ms ease,
+    border-color 240ms ease,
+    box-shadow 240ms ease,
+    backdrop-filter 240ms ease;
+}
+
+/* ---------- Reduced transparency ----------
+   The blueprint palette relies on translucent surfaces; Modern + Dark add
+   backdrop-filter. Honor users who've asked for legibility over translucency. */
+@media (prefers-reduced-transparency: reduce) {
+  [data-theme] .card,
+  [data-theme] .search-results,
+  [data-theme] .unit-toggle,
+  [data-theme] .search-input {
+    background: var(--cream);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  [data-theme="modern"] .card,
+  [data-theme="modern"] .search-results,
+  [data-theme="modern"] .unit-toggle,
+  [data-theme="modern"] .search-input,
+  [data-theme="modern"] .forecast-card,
+  [data-theme="modern"] .history-item,
+  [data-theme="modern"] .cal-day {
+    background: #ffffff;
+  }
+
+  [data-theme="dark"] .card,
+  [data-theme="dark"] .search-results,
+  [data-theme="dark"] .unit-toggle,
+  [data-theme="dark"] .search-input,
+  [data-theme="dark"] .forecast-card,
+  [data-theme="dark"] .history-item,
+  [data-theme="dark"] .cal-day {
+    background: #2c2c2e;
+  }
+}
+
+/* ---------- High contrast ----------
+   The skill (§14): "near-solid backgrounds with a defined, contrasting
+   border." Translucent surfaces become solid; faint borders become solid
+   1px lines; the active unit pill becomes redundant (active button gets
+   a high-contrast fill instead). */
+@media (prefers-contrast: more) {
+  /* Drop translucent surfaces; force solid, defined borders */
+  [data-theme] .card,
+  [data-theme] .search-results,
+  [data-theme] .unit-toggle,
+  [data-theme] .search-input,
+  [data-theme] .forecast-card,
+  [data-theme] .history-item,
+  [data-theme] .cal-day {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-style: solid;
+  }
+
+  [data-theme="modern"] .card,
+  [data-theme="modern"] .search-results,
+  [data-theme="modern"] .unit-toggle,
+  [data-theme="modern"] .search-input,
+  [data-theme="modern"] .forecast-card,
+  [data-theme="modern"] .history-item,
+  [data-theme="modern"] .cal-day {
+    background: #ffffff;
+    border-color: #000000;
+    border-width: 1px;
+  }
+
+  [data-theme="dark"] .card,
+  [data-theme="dark"] .search-results,
+  [data-theme="dark"] .unit-toggle,
+  [data-theme="dark"] .search-input,
+  [data-theme="dark"] .forecast-card,
+  [data-theme="dark"] .history-item,
+  [data-theme="dark"] .cal-day {
+    background: #000000;
+    border-color: #ffffff;
+    border-width: 1px;
+  }
+
+  /* Blueprint: keep paper texture, but bump border + ink contrast */
+  [data-theme="blueprint"] .forecast-card,
+  [data-theme="blueprint"] .history-item,
+  [data-theme="blueprint"] .cal-day {
+    border-color: #1a0f06;
+    border-width: 1px;
+  }
+
+  /* Bump faint ink to full-opacity ink for legibility on solid surfaces */
+  :root,
+  [data-theme] {
+    --ink-faint: var(--ink-soft);
+  }
+
+  /* Pill becomes redundant — active button gets a high-contrast fill */
+  [data-theme] .unit-pill,
+  [data-theme] .theme-pill {
+    display: none;
+  }
+
+  [data-theme="modern"] .unit-btn.active,
+  [data-theme="modern"] .theme-btn.active {
+    background: #000000;
+    color: #ffffff;
+    border-color: #000000;
+  }
+
+  [data-theme="dark"] .unit-btn.active,
+  [data-theme="dark"] .theme-btn.active {
+    background: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
+  }
+}
+
+/* ---------- Reduced motion ----------
+   Keep color transitions (so theme switches remain visible) but kill
+   spatial motion (theme pill slide, skeleton shimmer, hover transitions). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  }
+
+  /* Theme + unit pills: drop the slide, keep the color fade */
+  .theme-pill,
+  .unit-pill {
+    transition: background-color 240ms ease !important;
+    transform: none !important;
+  }
+
+  /* Skeleton shimmer: stop, leave a flat placeholder */
+  .skeleton::after,
+  .skeleton-card::after {
+    animation: none !important;
+    opacity: 0.6;
+  }
+
+  /* Re-allow color transitions on surfaces so the theme switch is still visible */
+  body,
+  .container,
+  .card,
+  .forecast-card,
+  .history-item,
+  .cal-day,
+  .uv-hour,
+  .uv-badge,
+  .unit-toggle,
+  .search-input,
+  .search-results,
+  .search-btn,
+  .unit-btn,
+  .retry-btn,
+  .cal-nav-btn,
+  .error-banner,
+  .theme-switcher,
+  .theme-btn,
+  .back-link,
+  .search-results li,
+  .location-card {
+    transition-property: background-color, color, border-color, box-shadow,
+      backdrop-filter !important;
+    transition-duration: 240ms !important;
+  }
+
+  /* Per-skill: gentle static transition for hover, not instant */
+  .unit-btn:active,
+  .theme-btn:active,
+  .search-btn:active,
+  .retry-btn:active,
+  .cal-nav-btn:active {
+    transform: none !important;
   }
 }

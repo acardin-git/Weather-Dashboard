@@ -4,12 +4,38 @@
   <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Weather Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Special+Elite&display=swap"
-      rel="stylesheet"
-    />
+    <script src="theme-utils.js"></script>
+    <script>
+      // No-flash theme bootstrap. Runs before the stylesheet so the right
+      // theme is applied as CSS evaluates. Honors localStorage; otherwise
+      // picks Dark on prefers-color-scheme: dark and Blueprint otherwise.
+      // Google Fonts (Caveat + Special Elite) are only loaded when the
+      // resolved theme is Blueprint — Modern and Dark use the platform
+      // system font, so loading them wasted ~30KB.
+      (function () {
+        var theme = "blueprint";
+        try {
+          var saved = localStorage.getItem("weather-dashboard-theme");
+          if (saved === "blueprint" || saved === "modern" || saved === "dark") {
+            theme = saved;
+          } else if (
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+          ) {
+            theme = "dark";
+          }
+        } catch (e) {
+          if (
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+          ) {
+            theme = "dark";
+          }
+        }
+        document.documentElement.dataset.theme = theme;
+        if (theme === "blueprint") window.loadBlueprintFonts();
+      })();
+    </script>
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -35,9 +61,18 @@
         <span class="note note--d note--search" aria-hidden="true">log the station coordinates</span>
       </div>
 
-      <div class="unit-toggle" role="group" aria-label="Temperature unit">
-        <button type="button" id="unit-c" class="unit-btn" aria-pressed="false">°C</button>
-        <button type="button" id="unit-f" class="unit-btn" aria-pressed="false">°F</button>
+      <div class="header-controls">
+        <div class="unit-toggle" role="group" aria-label="Temperature unit">
+          <span class="unit-pill" aria-hidden="true"></span>
+          <button type="button" id="unit-c" class="unit-btn" aria-pressed="false">°C</button>
+          <button type="button" id="unit-f" class="unit-btn" aria-pressed="false">°F</button>
+        </div>
+        <div class="theme-switcher" role="group" aria-label="Theme">
+          <span class="theme-pill" aria-hidden="true"></span>
+          <button type="button" class="theme-btn" data-theme-value="blueprint" aria-pressed="true">Blueprint</button>
+          <button type="button" class="theme-btn" data-theme-value="modern" aria-pressed="false">Modern</button>
+          <button type="button" class="theme-btn" data-theme-value="dark" aria-pressed="false">Dark</button>
+        </div>
       </div>
     </header>
 

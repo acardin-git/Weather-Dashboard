@@ -31,6 +31,8 @@ const SEARCH_DEBOUNCE_MS = 350;
    fall back to DEFAULT_LOCATION (London).                                  */
 const STORAGE_KEY = "weather-dashboard-location";
 const UNIT_STORAGE_KEY = "weather-dashboard-unit";
+const THEME_STORAGE_KEY = "weather-dashboard-theme";
+const THEMES = ["blueprint", "modern", "dark"];
 
 const DEFAULT_LOCATION = {
   name: "London",
@@ -94,6 +96,9 @@ const els = {
   forecastUnit: document.getElementById("forecast-unit"),
   unitC: document.getElementById("unit-c"),
   unitF: document.getElementById("unit-f"),
+  themeButtons: document.querySelectorAll(".theme-btn"),
+  themePill: document.querySelector(".theme-pill"),
+  unitPill: document.querySelector(".unit-pill"),
 };
 
 /* ------------------------------- State ---------------------------------- */
@@ -723,6 +728,9 @@ function applyUnitButtons() {
   els.unitF.classList.toggle("active", tempUnit === "f");
   els.unitF.setAttribute("aria-pressed", String(tempUnit === "f"));
   els.forecastUnit.textContent = unitLabel();
+  if (els.unitPill) {
+    window.slidePill(els.unitPill, tempUnit === "f" ? 100 : 0);
+  }
 }
 
 function setUnit(unit) {
@@ -740,10 +748,63 @@ function setUnit(unit) {
 els.unitC.addEventListener("click", () => setUnit("c"));
 els.unitF.addEventListener("click", () => setUnit("f"));
 
+/* --------------------------- Theme switching -----------------------------
+   Reads the theme that the inline <head> script already wrote to
+   documentElement.dataset.theme and reconciles the switcher UI to match.
+   Saving is what makes the choice stick on subsequent loads; the inline
+   script is what makes the first paint match (no flash). */
+
+function getInitialTheme() {
+  const fromDom = document.documentElement.dataset.theme;
+  if (THEMES.includes(fromDom)) return fromDom;
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (THEMES.includes(saved)) return saved;
+  } catch (err) {}
+  return "blueprint";
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  els.themeButtons.forEach((btn) => {
+    const isActive = btn.dataset.themeValue === theme;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-pressed", String(isActive));
+  });
+  const idx = THEMES.indexOf(theme);
+  if (els.themePill && idx >= 0) {
+    window.slidePill(els.themePill, idx * 100);
+  }
+  // The unit pill is hidden in Blueprint but visible in Modern/Dark.
+  // Always slide it on theme change so it's positioned correctly when
+  // the user switches into Modern/Dark from another theme.
+  if (els.unitPill) {
+    window.slidePill(els.unitPill, tempUnit === "f" ? 100 : 0);
+  }
+}
+
+function setTheme(theme) {
+  if (!THEMES.includes(theme)) return;
+  applyTheme(theme);
+  // Lazy-load Blueprint fonts when switching *to* Blueprint — they were
+  // skipped at boot if Modern/Dark was the resolved theme.
+  if (theme === "blueprint") window.loadBlueprintFonts();
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (err) {
+    console.warn("Could not save theme to localStorage:", err);
+  }
+}
+
+els.themeButtons.forEach((btn) => {
+  btn.addEventListener("click", () => setTheme(btn.dataset.themeValue));
+});
+
 /* -------------------------------- Init ----------------------------------- */
 
 // On startup: restore the last selected location from localStorage
 // (or fall back to London) and load the dashboard for it.
 tempUnit = getSavedUnit();
 applyUnitButtons();
+applyTheme(getInitialTheme());
 loadDashboard(getSavedLocation());

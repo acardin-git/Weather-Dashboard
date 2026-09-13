@@ -21,6 +21,8 @@ const ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
 const HISTORY_YEARS = 5;
 const UNIT_STORAGE_KEY = "weather-dashboard-unit";
 const LOCATION_STORAGE_KEY = "weather-dashboard-location";
+const THEME_STORAGE_KEY = "weather-dashboard-theme";
+const THEMES = ["blueprint", "modern", "dark"];
 
 const DEFAULT_LOCATION = {
   name: "London",
@@ -48,6 +50,9 @@ const els = {
   error: document.getElementById("cal-error"),
   unitC: document.getElementById("unit-c"),
   unitF: document.getElementById("unit-f"),
+  themeButtons: document.querySelectorAll(".theme-btn"),
+  themePill: document.querySelector(".theme-pill"),
+  unitPill: document.querySelector(".unit-pill"),
 };
 
 /* ------------------------------- State ---------------------------------- */
@@ -239,6 +244,9 @@ function applyUnitButtons() {
   els.unitC.setAttribute("aria-pressed", String(tempUnit === "c"));
   els.unitF.classList.toggle("active", tempUnit === "f");
   els.unitF.setAttribute("aria-pressed", String(tempUnit === "f"));
+  if (els.unitPill) {
+    window.slidePill(els.unitPill, tempUnit === "f" ? 100 : 0);
+  }
   updateMeta();
 }
 
@@ -269,9 +277,58 @@ els.nextBtn.addEventListener("click", () => {
 els.unitC.addEventListener("click", () => setUnit("c"));
 els.unitF.addEventListener("click", () => setUnit("f"));
 
+/* --------------------------- Theme switching -----------------------------
+   Mirrors app.js: the inline <head> script sets data-theme before CSS
+   evaluates, this code reconciles the switcher UI and persists picks. */
+
+function getInitialTheme() {
+  const fromDom = document.documentElement.dataset.theme;
+  if (THEMES.includes(fromDom)) return fromDom;
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (THEMES.includes(saved)) return saved;
+  } catch (err) {}
+  return "blueprint";
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  els.themeButtons.forEach((btn) => {
+    const isActive = btn.dataset.themeValue === theme;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-pressed", String(isActive));
+  });
+  const idx = THEMES.indexOf(theme);
+  if (els.themePill && idx >= 0) {
+    window.slidePill(els.themePill, idx * 100);
+  }
+  // The unit pill is hidden in Blueprint but visible in Modern/Dark.
+  // Always slide it on theme change so it's positioned correctly when
+  // the user switches into Modern/Dark from another theme.
+  if (els.unitPill) {
+    window.slidePill(els.unitPill, tempUnit === "f" ? 100 : 0);
+  }
+}
+
+function setTheme(theme) {
+  if (!THEMES.includes(theme)) return;
+  applyTheme(theme);
+  if (theme === "blueprint") window.loadBlueprintFonts();
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (err) {
+    console.warn("Could not save theme to localStorage:", err);
+  }
+}
+
+els.themeButtons.forEach((btn) => {
+  btn.addEventListener("click", () => setTheme(btn.dataset.themeValue));
+});
+
 /* -------------------------------- Init ----------------------------------- */
 
 tempUnit = getSavedUnit();
 loc = getSavedLocation();
 applyUnitButtons();
+applyTheme(getInitialTheme());
 loadMonth();
