@@ -43,7 +43,7 @@
 
     <!-- ======= Header: title + city search ======= -->
     <header class="app-header">
-      <h1 class="app-title">🌤️ Weather Dashboard</h1>
+      <h1 class="app-title"><svg class="title-glyph" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M32 5L37 27L59 32L37 37L32 59L27 37L5 32L27 27Z"/><circle cx="32" cy="32" r="7"/><path stroke-width="2" d="M15 15l5 5M49 15l-5 5M15 49l5-5M49 49l-5-5"/></svg>Weather Dashboard</h1>
 
       <div class="search-wrapper">
         <form id="search-form" class="search-form" autocomplete="off">
@@ -154,9 +154,24 @@
       <div id="uv-hours" class="uv-hours"></div>
     </section>
 
-    <footer class="app-footer">
-      Weather data by
-      <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
+    <!-- Drafting title block: the identification table from an
+         engineering sheet (Blueprint only; Modern/Dark show a plain
+         credit line) -->
+    <footer class="app-footer title-block">
+      <div class="tb-row">
+        <span class="tb-cell"><span class="tb-label">Project</span>Weather Survey</span>
+        <span class="tb-cell"><span class="tb-label">Sheet</span>1 of 2</span>
+        <span class="tb-cell"><span class="tb-label">Scale</span>1:1</span>
+      </div>
+      <div class="tb-row">
+        <span class="tb-cell"><span class="tb-label">Drawn</span><span data-tb-date></span></span>
+        <span class="tb-cell"><span class="tb-label">Rev.</span>C</span>
+        <span class="tb-cell"><span class="tb-label">Checked</span>o.m.</span>
+      </div>
+      <p class="tb-credit">
+        Weather data by
+        <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
+      </p>
     </footer>
   </main>
 

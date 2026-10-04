@@ -15,6 +15,10 @@
         re-targets from where the pill actually is on screen — no jump,
         no seam. Velocity carries through the re-target (no brick wall).
         Apple reference: damping 1.0, response ~0.35s.
+
+     3. fillTitleBlockDate() — stamps today's date into the drafting
+        title-block footer both pages share ("Drawn: 03 OCT 2026" style,
+        matching the sheet's lettering conventions).
    ========================================================================== */
 
 (function () {
@@ -115,4 +119,23 @@
   // can both use them without an import system.
   window.loadBlueprintFonts = loadBlueprintFonts;
   window.slidePill = slidePill;
+
+  function fillTitleBlockDate() {
+    const MONTHS = [
+      "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+      "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
+    ];
+    const d = new Date();
+    const text =
+      String(d.getDate()).padStart(2, "0") +
+      " " +
+      MONTHS[d.getMonth()] +
+      " " +
+      d.getFullYear();
+    document.querySelectorAll("[data-tb-date]").forEach((el) => {
+      el.textContent = text;
+    });
+  }
+
+  window.fillTitleBlockDate = fillTitleBlockDate;
 })();

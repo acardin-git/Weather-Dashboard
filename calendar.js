@@ -184,7 +184,7 @@ function renderCalendar({ highs, lows }) {
 
     cells.push(`
       <div class="cal-day ${isToday ? "cal-day--today" : ""}">
-        <span class="cal-day-num">${d}</span>
+        <span class="cal-day-num">${pad(d)}</span>
         <span class="cal-day-temps">
           <span class="cal-day-high">${hi != null ? formatTemp(hi) : "–"}</span>
           <span class="cal-day-low">${lo != null ? formatTemp(lo) : "–"}</span>
@@ -331,4 +331,5 @@ tempUnit = getSavedUnit();
 loc = getSavedLocation();
 applyUnitButtons();
 applyTheme(getInitialTheme());
+if (window.fillTitleBlockDate) window.fillTitleBlockDate();
 loadMonth();

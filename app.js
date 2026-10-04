@@ -43,36 +43,119 @@ const DEFAULT_LOCATION = {
 };
 
 /* WMO weather interpretation codes -> icon + description
-   (documented at https://open-meteo.com/en/docs) */
+   (documented at https://open-meteo.com/en/docs)
+
+   Icons are single-stroke patent-drawing glyphs — inline SVG drawn with
+   stroke="currentColor" so they inherit the theme ink and stay perfectly
+   monochrome. (Emoji rendered off-palette blues and violets on the sepia
+   paper, and CSS filters could not fully tame them.) */
+const CLOUD_PATH = "M18 40a9 9 0 0 1 0-18a13 13 0 0 1 25-4a11.5 11.5 0 0 1 3 22Z";
+
+function glyph(inner) {
+  return (
+    '<svg class="wx-glyph" viewBox="0 0 64 64" fill="none" stroke="currentColor" ' +
+    'stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+    inner +
+    "</svg>"
+  );
+}
+
+// The base cloud, optionally lifted to leave room for precipitation ticks.
+const cloud = (lift) =>
+  `<g transform="translate(0 ${lift})"><path d="${CLOUD_PATH}"/></g>`;
+
+const GLYPHS = {
+  sun: glyph(
+    '<circle cx="32" cy="32" r="10"/>' +
+      '<path d="M32 11v6M32 47v6M11 32h6M47 32h6M17.2 17.2l4.3 4.3M42.5 42.5l4.3 4.3M46.8 17.2l-4.3 4.3M21.5 42.5l-4.3 4.3"/>'
+  ),
+  sunCloud: glyph(
+    '<circle cx="45" cy="19" r="6"/>' +
+      '<path d="M45 8v4M51 19h4M40.5 14.5l-2.9-2.9M49.5 14.5l2.9-2.9"/>' +
+      `<g transform="translate(-4 10) scale(0.8)"><path d="${CLOUD_PATH}"/></g>`
+  ),
+  cloud: glyph(cloud(6)),
+  fog: glyph(
+    cloud(-5) + '<path d="M17 47h27M23 55h21" stroke-dasharray="7 5"/>'
+  ),
+  drizzle: glyph(
+    cloud(-4) + '<path d="M24 45v6M32 48v6M40 45v6" stroke-dasharray="3 4"/>'
+  ),
+  rain: glyph(cloud(-4) + '<path d="M23 44l-2 10M33 46l-2 10M43 44l-2 10"/>'),
+  heavyRain: glyph(
+    cloud(-4) +
+      '<path d="M20 44l-2 10M29 45l-2 10M38 45l-2 10M47 44l-2 10"/>'
+  ),
+  snow: glyph(
+    cloud(-4) +
+      '<path stroke-width="2.5" d="M25 43.5v11M19.9 46.4l10.2 5.9M19.9 52.6l10.2-5.9"/>' +
+      '<path stroke-width="2.5" d="M33 48.5v11M27.9 51.4l10.2 5.9M27.9 57.6l10.2-5.9"/>' +
+      '<path stroke-width="2.5" d="M41 43.5v11M35.9 46.4l10.2 5.9M35.9 52.6l10.2-5.9"/>'
+  ),
+  thunder: glyph(cloud(-4) + '<path d="M35 40l-8 12h6l-4 11 11-13h-6l5-10Z"/>'),
+  unknown: glyph(
+    '<circle cx="32" cy="32" r="15" stroke-dasharray="5 4"/>' +
+      '<path d="M26.5 26.5a5.8 5.8 0 1 1 8.2 5.3c-1.9 1-2.7 2-2.7 4"/>' +
+      '<path d="M32 42.5v.5"/>'
+  ),
+};
+
+/* Small inline glyphs for the forecast meta rows (precip / UV / sunrise /
+   sunset) — same currentColor treatment, drawn at text size. */
+function metaGlyph(inner) {
+  return (
+    '<svg class="meta-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+    inner +
+    "</svg>"
+  );
+}
+
+const META_GLYPHS = {
+  droplet: metaGlyph(
+    '<path d="M12 3.5s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11Z"/>'
+  ),
+  uv: metaGlyph(
+    '<circle cx="12" cy="12" r="4"/>' +
+      '<path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/>'
+  ),
+  sunrise: metaGlyph(
+    '<path d="M3.5 17.5h17M12 6v5.5M12 6L9 9M12 6l3 3M6.5 17.5a5.5 5.5 0 0 1 11 0"/>'
+  ),
+  sunset: metaGlyph(
+    '<path d="M3.5 17.5h17M12 11.5V6M12 11.5L9 8.5M12 11.5l3-3M6.5 17.5a5.5 5.5 0 0 1 11 0"/>'
+  ),
+};
+
 const WMO_CODES = {
-  0: { icon: "☀️", label: "Clear sky" },
-  1: { icon: "🌤️", label: "Mainly clear" },
-  2: { icon: "⛅", label: "Partly cloudy" },
-  3: { icon: "☁️", label: "Overcast" },
-  45: { icon: "🌫️", label: "Fog" },
-  48: { icon: "🌫️", label: "Depositing rime fog" },
-  51: { icon: "🌦️", label: "Light drizzle" },
-  53: { icon: "🌦️", label: "Moderate drizzle" },
-  55: { icon: "🌦️", label: "Dense drizzle" },
-  56: { icon: "🌧️", label: "Light freezing drizzle" },
-  57: { icon: "🌧️", label: "Dense freezing drizzle" },
-  61: { icon: "🌧️", label: "Slight rain" },
-  63: { icon: "🌧️", label: "Moderate rain" },
-  65: { icon: "🌧️", label: "Heavy rain" },
-  66: { icon: "🌧️", label: "Light freezing rain" },
-  67: { icon: "🌧️", label: "Heavy freezing rain" },
-  71: { icon: "🌨️", label: "Slight snowfall" },
-  73: { icon: "🌨️", label: "Moderate snowfall" },
-  75: { icon: "🌨️", label: "Heavy snowfall" },
-  77: { icon: "🌨️", label: "Snow grains" },
-  80: { icon: "🌦️", label: "Slight rain showers" },
-  81: { icon: "🌦️", label: "Moderate rain showers" },
-  82: { icon: "⛈️", label: "Violent rain showers" },
-  85: { icon: "🌨️", label: "Slight snow showers" },
-  86: { icon: "🌨️", label: "Heavy snow showers" },
-  95: { icon: "⛈️", label: "Thunderstorm" },
-  96: { icon: "⛈️", label: "Thunderstorm with slight hail" },
-  99: { icon: "⛈️", label: "Thunderstorm with heavy hail" },
+  0: { icon: GLYPHS.sun, label: "Clear sky" },
+  1: { icon: GLYPHS.sunCloud, label: "Mainly clear" },
+  2: { icon: GLYPHS.sunCloud, label: "Partly cloudy" },
+  3: { icon: GLYPHS.cloud, label: "Overcast" },
+  45: { icon: GLYPHS.fog, label: "Fog" },
+  48: { icon: GLYPHS.fog, label: "Depositing rime fog" },
+  51: { icon: GLYPHS.drizzle, label: "Light drizzle" },
+  53: { icon: GLYPHS.drizzle, label: "Moderate drizzle" },
+  55: { icon: GLYPHS.drizzle, label: "Dense drizzle" },
+  56: { icon: GLYPHS.drizzle, label: "Light freezing drizzle" },
+  57: { icon: GLYPHS.drizzle, label: "Dense freezing drizzle" },
+  61: { icon: GLYPHS.rain, label: "Slight rain" },
+  63: { icon: GLYPHS.rain, label: "Moderate rain" },
+  65: { icon: GLYPHS.heavyRain, label: "Heavy rain" },
+  66: { icon: GLYPHS.rain, label: "Light freezing rain" },
+  67: { icon: GLYPHS.heavyRain, label: "Heavy freezing rain" },
+  71: { icon: GLYPHS.snow, label: "Slight snowfall" },
+  73: { icon: GLYPHS.snow, label: "Moderate snowfall" },
+  75: { icon: GLYPHS.snow, label: "Heavy snowfall" },
+  77: { icon: GLYPHS.snow, label: "Snow grains" },
+  80: { icon: GLYPHS.drizzle, label: "Slight rain showers" },
+  81: { icon: GLYPHS.drizzle, label: "Moderate rain showers" },
+  82: { icon: GLYPHS.thunder, label: "Violent rain showers" },
+  85: { icon: GLYPHS.snow, label: "Slight snow showers" },
+  86: { icon: GLYPHS.snow, label: "Heavy snow showers" },
+  95: { icon: GLYPHS.thunder, label: "Thunderstorm" },
+  96: { icon: GLYPHS.thunder, label: "Thunderstorm with slight hail" },
+  99: { icon: GLYPHS.thunder, label: "Thunderstorm with heavy hail" },
 };
 
 /* ------------------------------ DOM refs -------------------------------- */
@@ -499,7 +582,7 @@ function renderForecast(forecast) {
   els.forecastGrid.innerHTML = daily.time
     .map((dateStr, i) => {
       const code = WMO_CODES[daily.weather_code[i]] ?? {
-        icon: "❓",
+        icon: GLYPHS.unknown,
         label: "Unknown",
       };
       const precip = daily.precipitation_probability_max?.[i];
@@ -519,10 +602,10 @@ function renderForecast(forecast) {
             <span class="temp-max">${formatTemp(daily.temperature_2m_max[i])}°</span> /
             <span class="temp-min">${formatTemp(daily.temperature_2m_min[i])}°</span>
           </p>
-          <p class="forecast-meta">💧 Precip: ${precip != null ? `${precip}%` : "–"}</p>
-          <p class="forecast-meta">🔆 UV: ${uvMax != null ? uvMax.toFixed(1) : "–"}</p>
-          <p class="forecast-meta">🌅 ${formatIsoTime(daily.sunrise?.[i])}</p>
-          <p class="forecast-meta">🌇 ${formatIsoTime(daily.sunset?.[i])}</p>
+          <p class="forecast-meta">${META_GLYPHS.droplet} Precip: ${precip != null ? `${precip}%` : "–"}</p>
+          <p class="forecast-meta">${META_GLYPHS.uv} UV: ${uvMax != null ? uvMax.toFixed(1) : "–"}</p>
+          <p class="forecast-meta">${META_GLYPHS.sunrise} ${formatIsoTime(daily.sunrise?.[i])}</p>
+          <p class="forecast-meta">${META_GLYPHS.sunset} ${formatIsoTime(daily.sunset?.[i])}</p>
           ${tooltip}
         </article>`;
     })
@@ -923,4 +1006,5 @@ els.themeButtons.forEach((btn) => {
 tempUnit = getSavedUnit();
 applyUnitButtons();
 applyTheme(getInitialTheme());
+if (window.fillTitleBlockDate) window.fillTitleBlockDate();
 loadDashboard(getSavedLocation());
