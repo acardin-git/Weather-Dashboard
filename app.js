@@ -101,10 +101,13 @@ const GLYPHS = {
 };
 
 /* Small inline glyphs for the forecast meta rows (precip / UV / sunrise /
-   sunset) — same currentColor treatment, drawn at text size. */
-function metaGlyph(inner) {
+   sunset) — same currentColor treatment, drawn at text size. Sunrise and
+   sunset rows have no text label, so their glyphs render one size up. */
+function metaGlyph(inner, cls = "") {
   return (
-    '<svg class="meta-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    '<svg class="meta-glyph' +
+    (cls ? " " + cls : "") +
+    '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
     'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
     inner +
     "</svg>"
@@ -120,10 +123,12 @@ const META_GLYPHS = {
       '<path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/>'
   ),
   sunrise: metaGlyph(
-    '<path d="M3.5 17.5h17M12 6v5.5M12 6L9 9M12 6l3 3M6.5 17.5a5.5 5.5 0 0 1 11 0"/>'
+    '<path d="M3.5 17.5h17M12 6v5.5M12 6L9 9M12 6l3 3M6.5 17.5a5.5 5.5 0 0 1 11 0"/>',
+    "meta-glyph--lg"
   ),
   sunset: metaGlyph(
-    '<path d="M3.5 17.5h17M12 11.5V6M12 11.5L9 8.5M12 11.5l3-3M6.5 17.5a5.5 5.5 0 0 1 11 0"/>'
+    '<path d="M3.5 17.5h17M12 11.5V6M12 11.5L9 8.5M12 11.5l3-3M6.5 17.5a5.5 5.5 0 0 1 11 0"/>',
+    "meta-glyph--lg"
   ),
 };
 
@@ -822,10 +827,15 @@ function positionTooltip(card) {
   const tipWidth = tooltip.offsetWidth;
   if (tipWidth === 0) return; // not laid out yet
   const margin = 8;
+  // Clamp against the real layout width (clientWidth excludes the classic
+  // desktop scrollbar; innerWidth includes it, which let tooltips leak
+  // past the scrollable edge by the scrollbar's width).
+  const layoutWidth =
+    document.documentElement.clientWidth || window.innerWidth;
   const centeredLeft = cardRect.left + cardRect.width / 2 - tipWidth / 2;
   const clampedLeft = Math.max(
     margin,
-    Math.min(window.innerWidth - tipWidth - margin, centeredLeft)
+    Math.min(layoutWidth - tipWidth - margin, centeredLeft)
   );
   const shiftX = clampedLeft - centeredLeft;
   tooltip.style.setProperty("--tip-x", `${shiftX}px`);

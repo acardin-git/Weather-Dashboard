@@ -218,6 +218,16 @@ input:focus-visible,
   outline-offset: 2px;
 }
 
+/* Kills the double-tap-zoom gesture on small controls: rapid taps (e.g.
+   flipping °C ↔ °F) register as taps instead of a zoom on phones. */
+.unit-btn,
+.theme-btn,
+.search-btn,
+.retry-btn,
+.cal-nav-btn {
+  touch-action: manipulation;
+}
+
 /* ==========================================================================
    Decorative primitives (added markup only; all pointer-transparent)
    ========================================================================== */
@@ -1360,6 +1370,15 @@ a.history-item--link {
   vertical-align: -0.14em;
 }
 
+/* Sunrise/sunset glyphs carry the row's whole meaning (no text label), so
+   they render noticeably larger than the labeled droplet/UV marks. */
+.meta-glyph--lg {
+  width: 1.55em;
+  height: 1.55em;
+  margin-right: 4px;
+  vertical-align: -0.34em;
+}
+
 /* ---------- Skeleton loaders (aged-paper shimmer) ---------- */
 .skeleton,
 .skeleton-card {
@@ -1726,31 +1745,50 @@ a.history-item--link {
   }
 
   /* On phones the tooltip is 24 hours tall — too big for a viewport.
-     Cap height, allow internal scroll. */
+     Cap height, allow internal scroll, and stack the two hour columns:
+     side-by-side the panel is ~307px wide, wider than small phones, so
+     no amount of clamping could keep it inside the viewport. */
   .fc-tooltip {
     max-height: 50vh;
     overflow-y: auto;
   }
 
-  /* Theme + unit switchers fit a tighter header on mobile */
+  .fc-tooltip-cols {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Theme + unit switchers on their own row, full tap targets. The old
+     shrink-to-fit approach squeezed the toggles until °F sat ~3px from the
+     theme switcher — on phones, thumbs aiming at °F hit "Blueprint".
+     Wrapping lets a narrow phone drop the theme switcher to a second row
+     instead of starving the unit toggle. */
   .header-controls {
     width: 100%;
+    flex-wrap: wrap;
+    row-gap: 10px;
     justify-content: space-between;
   }
 
-  /* Allow the switchers to shrink so they don't push the page wider than
-     the viewport on narrow phones. The pills inside use percentage widths
-     so they stay aligned as the switcher shrinks. */
   .unit-toggle,
   .theme-switcher {
-    flex-shrink: 1;
-    min-width: 0;
+    flex-shrink: 0;
+  }
+
+  /* 44px minimum touch targets (skill §2) */
+  .unit-btn {
+    flex: 1 1 0;
+    height: 44px;
+    min-width: 52px;
+    padding: 0;
+    font-size: 0.95rem;
   }
 
   .theme-btn {
-    min-width: 0;
-    padding: 6px 6px;
-    font-size: 0.7rem;
+    height: 44px;
+    min-width: 56px;
+    padding: 0 8px;
+    font-size: 0.72rem;
   }
 
   /* Title block tightens but keeps its three-column rows */
